@@ -18,6 +18,32 @@ cert_to_use = dict()  # type: Dict[str, str]
 
 CONFIG_LINE = re.compile('^([a-z_]{4,}): (.*)')
 
+CERTBOT_SECTION_HEADER = re.compile(r'^\[([^ ]+)\]$')
+CERTBOT_CONFIG_LINE = re.compile(r'^\s*([^ ]+)\s*=\s*(.+)\s*$')
+
+
+def parse_certbot_renewal(lines: List[str]) -> Dict[str, Dict[str, str]]:
+    lines = (x.strip() for x in lines)
+    section = 'root'
+    ret = collections.defaultdict(dict)
+
+    for line in lines:
+        if not line or line.startswith('#'):
+            continue
+
+        ma = CERTBOT_SECTION_HEADER.search(line)
+        if ma:
+            section = ma.group(1)
+            continue
+
+        ma = CERTBOT_CONFIG_LINE.search(line)
+        if not ma:
+            raise Exception('invalid config file line: {}\n'.format(line))
+
+        ret[section][ma.group(1)] = ma.group(2)
+
+    return ret
+
 
 def parse_config(server_name: str, contents: str) -> Config:
     """
@@ -64,6 +90,27 @@ def load_config() -> Iterable[Tuple[str, Config]]:
 
         yield (server_name, parse_config(server_name, contents))
 
+def load_certbot():
+    d='/etc/letsencrypt/renewal/'
+    known_certs = {}
+    webroots = {}
+    for path in os.listdir(d):
+        with open(d + path) as f:
+            conf = parse_certbot_renewal(f.readlines())
+        cert = conf['root']['cert']
+        ma = re.search(r'^/etc/letsencrypt/live/([^/]*)/cert.pem$', cert)
+        if not ma:
+            raise Exception('invalid cert in {}: {}'.format(path, cert))
+        cert = ma.group(1)
+
+        maps = conf['[webroot_map]']
+
+        known_certs[cert] = set(maps.keys())
+        webroots.update(maps)
+
+    return (known_certs, webroots)
+
+known_certs, webroots = load_certbot()
 
 configs = dict(load_config())
 
@@ -147,7 +194,6 @@ map $http_upgrade $connection_upgrade {
 """)
 
 for server_name, config in configs.items():
-    our_cert_to_use = cert_to_use.get(server_name, server_name)
 
     # if the request is not ssl, redirect it: everything must be ssl
     print(r"""
@@ -156,7 +202,7 @@ server {{
     listen [::]:80;
     server_name {0};
     add_header X-Clacks-Overhead "GNU Terry Pratchett";
-    root /srv/{1};
+    root {1};
 
     location /.well-known/ {{
         try_files $uri $uri/ =404;
@@ -166,10 +212,11 @@ server {{
         return 301 https://{0}$request_uri;
     }}
 }}
-""".format(server_name, our_cert_to_use))
+""".format(server_name, webroots.get(server_name, '/srv/' + server_name)))
 
     print("server{{\n  server_name {};\n".format(server_name))
 
+    our_cert_to_use = cert_to_use.get(server_name, server_name)
     print(ssl(our_cert_to_use))
 
     print('root {};'.format(config.root))
