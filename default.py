@@ -194,6 +194,7 @@ map $http_upgrade $connection_upgrade {
 """)
 
 for server_name, config in configs.items():
+    our_cert_to_use = cert_to_use.get(server_name, server_name)
 
     # if the request is not ssl, redirect it: everything must be ssl
     print(r"""
@@ -212,11 +213,15 @@ server {{
         return 301 https://{0}$request_uri;
     }}
 }}
-""".format(server_name, webroots.get(server_name, '/srv/' + server_name)))
+""".format(server_name, webroots.get(server_name, '/srv/' + our_cert_to_use)))
 
+    if our_cert_to_use not in known_certs:
+        sys.stderr.write("cert for {} doesn't currently exist, so not generating config.\n"
+                .format(our_cert_to_use))
+        required_certs.add(our_cert_to_use)
+        continue
     print("server{{\n  server_name {};\n".format(server_name))
 
-    our_cert_to_use = cert_to_use.get(server_name, server_name)
     print(ssl(our_cert_to_use))
 
     print('root {};'.format(config.root))
@@ -226,10 +231,14 @@ server {{
 
 
 for cert in required_certs:
-    if os.path.exists('/etc/letsencrypt/renewal/{}.conf'.format(cert)):
-        continue
     sub_names = {cert}
     for src, dest in cert_to_use.items():
         if cert == dest:
             sub_names.add(src)
-    sys.stderr.write("certbot certonly --webroot -w /srv/{} -d {}\n".format(cert, ' -d '.join(sorted(sub_names))))
+    have = known_certs.get(cert, set())
+    if have == sub_names:
+        continue
+
+    sys.stderr.write("certbot certonly --webroot -w /srv/{} -d {} # {}\n"
+            .format(cert, ' -d '.join(sorted(sub_names)), have))
+
