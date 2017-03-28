@@ -125,9 +125,9 @@ for server_name, config in configs.items():
         cert_to_use[unionable] = best
 
 
-def ssl(cert_name: str, default: str = ''):
+def ssl(cert_name: str, default: str = '', strict: bool = False):
     required_certs.add(cert_name)
-    return """
+    ret = """
     listen 443 ssl http2 """ + default + """;
     listen [::]:443 ssl http2 """ + default + """;
 """ + r"""
@@ -149,11 +149,13 @@ def ssl(cert_name: str, default: str = ''):
     ssl_ciphers EECDH+ECDSA+AESGCM:HIGH:+AES256:+DH:+RSA:+SHA:!3DES:!CAMELLIA:!NULL:!aNULL:!LOW:!MD5:!EXP:!PSK:!SRP:!DSS:!SEED:!SHA384;
 
     add_header X-Clacks-Overhead "GNU Terry Pratchett";
-""".format(cert_name)
 
+    """.format(cert_name)
+    if strict:
+        # 15,552,000 seconds = 180 days
+        ret += 'add_header Strict-Transport-Security "max-age=15552000";\n'
+    return ret
 
-# add_header Strict-Transport-Security "max-age=15552000";
-# 15,552,000 seconds = 180 days
 
 # unknown sites on 80 go to blog
 print(r"""
@@ -222,7 +224,7 @@ server {{
         continue
     print("server{{\n  server_name {};\n".format(server_name))
 
-    print(ssl(our_cert_to_use))
+    print(ssl(our_cert_to_use, strict=True))
 
     print('root {};'.format(config.root))
     print(config.location_config)
