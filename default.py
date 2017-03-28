@@ -58,7 +58,7 @@ def parse_config(server_name: str, contents: str) -> Config:
     settings = {}  # type: Dict[str, str]
     location_config = r"""
     location / {
-        index index.html index.htm index.xml index.txt index.svg;
+        index index.html index.htm index.xml index.txt index.svg index.xml;
         try_files $uri $uri/ =404;
     }
 """
