@@ -144,7 +144,6 @@ def ssl(cert_name: str, default: str = '', strict: bool = False):
 
     ssl_stapling on;
     ssl_stapling_verify on;
-    ssl_trusted_certificate /etc/nginx/ca.pem;
 
     ssl_dhparam /etc/nginx/dhparam.pem;
 
