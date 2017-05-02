@@ -92,6 +92,8 @@ def load_config() -> Iterable[Tuple[str, Config]]:
 
 def load_certbot():
     d='/etc/letsencrypt/renewal/'
+    if not os.path.exists(d):
+        return ({}, {},)
     known_certs = {}
     webroots = {}
     for path in os.listdir(d):
@@ -170,17 +172,26 @@ server {
 }
 """)
 
-# unknown sites on 443 get the blog cert, and go to blog
-print('server {')
-print(ssl(cert_to_use['blog.goeswhere.com'], 'default'))
-print(r"""
-    server_name junk;
+try:
+    with open('default-site.conf') as f:
+        default_site = f.read().strip()
+except FileNotFoundError as e:
+    default_site = 'blog.goeswhere.com'
 
-    location = / {
-        return 302 https://blog.goeswhere.com/;
+if default_site not in cert_to_use:
+    sys.stderr.write("default site '{}' doesn't exist, so no default site is generated\n".format(default_site))
+else:
+    # unknown sites on 443 get the blog cert, and go to blog
+    print('server {')
+    print(ssl(cert_to_use[default_site], 'default'))
+    print(r"""
+        server_name junk;
+
+        location = / {
+            return 302 https://blog.goeswhere.com/;
+        }
     }
-}
-""")
+    """)
 
 # this should be in the per-thing config, but isn't because it can't be in the server{} block
 print(r"""
