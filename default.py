@@ -93,6 +93,7 @@ def load_config() -> Iterable[Tuple[str, Config]]:
 def load_certbot():
     d='/etc/letsencrypt/renewal/'
     if not os.path.exists(d):
+        sys.stderr.write("letsencrypt doesn't have any certs, apparently: {} is empty\n".format(d))
         return ({}, {},)
     known_certs = {}
     webroots = {}
@@ -177,12 +178,12 @@ try:
 except FileNotFoundError as e:
     default_site = 'blog.goeswhere.com'
 
-if default_site not in cert_to_use:
+if default_site not in known_certs:
     sys.stderr.write("default site '{}' doesn't exist, so no default site is generated\n".format(default_site))
 else:
     # unknown sites on 443 get the blog cert, and go to blog
     print('server {')
-    print(ssl(cert_to_use[default_site], 'default'))
+    print(ssl(cert_to_use.get(default_site, default_site), 'default'))
     print(r"""
         server_name junk;
 
