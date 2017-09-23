@@ -151,6 +151,10 @@ def ssl(cert_name: str, default: str = '', strict: bool = False):
     ssl_ciphers EECDH+ECDSA+AESGCM:HIGH:+AES256:+DH:+RSA:+SHA:!3DES:!CAMELLIA:!NULL:!aNULL:!LOW:!MD5:!EXP:!PSK:!SRP:!DSS:!SEED:!SHA384;
 
     add_header X-Clacks-Overhead "GNU Terry Pratchett";
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header X-Content-Type-Options "nosniff" always;
 
     """.format(cert_name)
     if strict:
