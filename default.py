@@ -210,7 +210,7 @@ map $http_upgrade $connection_upgrade {
 }
 """)
 
-for server_name, config in configs.items():
+for server_name, config in sorted(configs.items()):
     our_cert_to_use = cert_to_use.get(server_name, server_name)
 
     # if the request is not ssl, redirect it: everything must be ssl
