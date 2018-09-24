@@ -171,7 +171,7 @@ server {
     server_name junk;
 
     location = / {
-        return 302 https://blog.goeswhere.com/;
+        return 302 https://blog.goeswhere.com$request_uri;
     }
 }
 """)
@@ -192,7 +192,7 @@ else:
         server_name junk;
 
         location = / {
-            return 302 https://blog.goeswhere.com/;
+            return 302 https://blog.goeswhere.com$request_uri;
         }
     }
     """)
