@@ -148,7 +148,7 @@ def ssl(cert_name: str, default: str = '', strict: bool = False):
 
     ssl_dhparam /etc/nginx/dhparam.pem;
 
-    ssl_ciphers EECDH+ECDSA+AESGCM:HIGH:+AES256:+DH:+RSA:+SHA:!3DES:!CAMELLIA:!NULL:!aNULL:!LOW:!MD5:!EXP:!PSK:!SRP:!DSS:!SEED:!SHA384;
+    ssl_ciphers HIGH:+AES128:+AES256:+AESCCM:+SHA256:+SHA1:!RSA:!3DES:!CAMELLIA:!NULL:!kNULL:!aNULL:!MD5:!EXP:!PSK:!SRP:!DSS:!SEED:!SHA384:!kDH:!kECDH;
 
     add_header X-Clacks-Overhead "GNU Terry Pratchett";
     add_header X-XSS-Protection "1; mode=block" always;
