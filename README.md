@@ -13,3 +13,14 @@ Rough rules:
 
 As you can tell, this is a custom tool for my site only, but should be easy to fork.
 Be aware that there's *plenty* more hard-coded assumptions.
+
+
+Advantages of this system:
+
+ * direct control over nginx config, without copy paste (it's basically a templating system)
+ * with wildcard dns, I can serve a new domain with content in literally seconds:
+   * `mkdir -p /srv/new.example.com`
+   * `echo hello world > /srv/new.example.com/index.txt`
+   * `./go.sh | sudo bash` # (obviously I review the output then COPY PASTE IT USING THE MOUSE)
+ * nginx, unlike lighttpd and Apache, are actually supported by things;
+    e.g. modern proxying to backends, maintained well enough for a small site
