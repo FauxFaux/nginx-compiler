@@ -199,6 +199,8 @@ else:
 
 # this should be in the per-thing config, but isn't because it can't be in the server{} block
 print(r"""
+limit_req_zone $binary_remote_addr zone=privlimit:10m rate=5r/m;
+
 upstream websocket_pool {
 ip_hash;
     server 127.0.0.1:22280;
